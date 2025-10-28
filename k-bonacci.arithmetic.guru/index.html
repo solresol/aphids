@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aphid Population Explosion</title>
+    <title>k-bonacci Calculator</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
             overflow-x: hidden;
         }
@@ -43,6 +43,10 @@
             margin: 30px 0;
         }
 
+        .control-row {
+            margin: 15px 0;
+        }
+
         .controls label {
             margin: 0 10px;
             font-size: 1.1em;
@@ -55,6 +59,26 @@
             border-radius: 5px;
             border: none;
             margin: 0 5px;
+            width: 80px;
+        }
+
+        #initialValuesContainer {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .initial-value-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .initial-value-input label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
         }
 
         .controls button {
@@ -142,10 +166,17 @@
             margin-bottom: 5px;
         }
 
-        .aphid-count {
-            font-size: 0.9em;
+        .value-count {
+            font-size: 1.1em;
+            font-weight: bold;
             text-align: center;
-            word-break: break-all;
+            margin-bottom: 3px;
+        }
+
+        .actual-value {
+            font-size: 0.65em;
+            text-align: center;
+            opacity: 0.8;
         }
 
         .scroll-view {
@@ -177,8 +208,8 @@
             margin-bottom: 15px;
         }
 
-        .emoji-display {
-            font-size: 3em;
+        .value-display {
+            font-size: 2.5em;
             text-align: center;
             margin: 20px 0;
             line-height: 1.2;
@@ -210,173 +241,227 @@
             margin-top: 5px;
         }
 
-        .generation-marker {
-            display: inline-block;
-            background: #ff6b6b;
-            padding: 3px 8px;
-            border-radius: 15px;
-            font-size: 0.7em;
-            margin-top: 5px;
-        }
-
-        .generation-marker-scroll {
-            display: inline-block;
-            background: #ff6b6b;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-left: 10px;
-        }
-
-        .warning-box {
-            background: rgba(255, 107, 107, 0.3);
-            border-left: 4px solid #ff6b6b;
+        .info-box {
+            background: rgba(78, 205, 196, 0.3);
+            border-left: 4px solid #4ecdc4;
             padding: 20px;
             margin: 30px 0;
             border-radius: 5px;
         }
 
-        .warning-box h3 {
+        .info-box h3 {
             margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🐛 The Aphid Population Explosion 🐛</h1>
-        <p class="subtitle">Watch a single aphid become millions in just one month</p>
+        <h1>🔢 k-bonacci Calculator 🔢</h1>
+        <p class="subtitle">Generalized Fibonacci: sum the last k terms to get the next</p>
 
         <div class="controls">
-            <label>
-                Offspring per aphid:
-                <input type="number" id="offspring" value="50" min="10" max="100" step="5">
-            </label>
-            <label>
-                Generation time (days):
-                <input type="number" id="genTime" value="7" min="4" max="10" step="1">
-            </label>
-            <label>
-                View type:
-                <select id="viewType">
-                    <option value="calendar">Calendar View</option>
-                    <option value="scroll">Scroll View</option>
-                    <option value="both">Both Views</option>
-                </select>
-            </label>
-            <button onclick="calculate()">Calculate Population</button>
+            <div class="control-row">
+                <label>
+                    k (number of lags):
+                    <input type="number" id="kValue" value="4" min="1" max="10" step="1" onchange="updateInitialValueInputs()">
+                </label>
+                <label>
+                    Sequence length (N):
+                    <input type="number" id="seqLength" value="30" min="1" max="365" step="1">
+                </label>
+            </div>
+
+            <div class="control-row">
+                <div id="initialValuesContainer"></div>
+            </div>
+
+            <div class="control-row">
+                <label>
+                    View type:
+                    <select id="viewType">
+                        <option value="calendar">Calendar View</option>
+                        <option value="scroll">Scroll View</option>
+                        <option value="both">Both Views</option>
+                    </select>
+                </label>
+                <button onclick="calculate()">Calculate Sequence</button>
+            </div>
         </div>
 
         <div class="stats" id="summaryStats"></div>
 
         <div class="calendar-view" id="calendarView" style="display:none;">
-            <h2 id="calendarTitle">📅 30-Day Calendar</h2>
+            <h2 id="calendarTitle">📅 Sequence Calendar</h2>
             <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
         <div class="scroll-view" id="scrollView" style="display:none;">
-            <h2>📜 Day-by-Day Growth</h2>
+            <h2>📜 Day-by-Day Sequence</h2>
             <div id="scrollContent"></div>
         </div>
 
-        <div class="warning-box">
-            <h3>⚠️ Fun Fact</h3>
-            <p>This is why aphids are such successful pests! In reality, predators, weather, and resource limitations prevent populations from reaching these theoretical maximums. But under ideal greenhouse conditions, these numbers are achievable.</p>
+        <div class="info-box">
+            <h3>💡 About k-bonacci Sequences</h3>
+            <p><strong>k=1:</strong> Constant (each term equals the previous)<br>
+            <strong>k=2:</strong> Fibonacci (1, 1, 2, 3, 5, 8, 13...)<br>
+            <strong>k=3:</strong> Tribonacci (each term is sum of previous 3)<br>
+            <strong>k=4:</strong> Tetranacci (sum of previous 4)<br>
+            <br>
+            The growth rate approaches 2 as k increases. The dominant eigenvalue λ of the companion matrix determines the asymptotic growth: a(n) ≈ c·λⁿ for large n.</p>
         </div>
     </div>
 
     <script>
+        function updateInitialValueInputs() {
+            const k = parseInt(document.getElementById('kValue').value);
+            const container = document.getElementById('initialValuesContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < k; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'initial-value-input';
+
+                const label = document.createElement('label');
+                label.textContent = `a(${i})`;
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `init${i}`;
+                input.value = '1';
+                input.step = '1';
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                container.appendChild(wrapper);
+            }
+        }
+
+        function calculateKBonacci(k, initialValues, n) {
+            const sequence = [...initialValues];
+
+            for (let i = k; i <= n; i++) {
+                let sum = 0;
+                for (let j = 1; j <= k; j++) {
+                    sum += sequence[i - j];
+                }
+                sequence.push(sum);
+            }
+
+            return sequence;
+        }
+
+        function estimateDominantEigenvalue(sequence, k) {
+            // For large n, the ratio a(n+1)/a(n) approaches the dominant eigenvalue
+            if (sequence.length < k + 10) return null;
+
+            const n = sequence.length - 1;
+            if (sequence[n] === 0) return null;
+
+            return sequence[n] / sequence[n - 1];
+        }
+
         function formatNumber(num) {
-            return Math.floor(num).toLocaleString();
+            if (num >= 1e15) {
+                return num.toExponential(2);
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            } else if (num >= 100) {
+                return num.toFixed(0);
+            } else if (num >= 10) {
+                return num.toFixed(1);
+            } else if (num >= 1) {
+                return num.toFixed(2);
+            } else {
+                return num.toFixed(3);
+            }
         }
 
-        function getEmoji(count) {
-            if (count === 1) return '🐛';
-            if (count < 10) return '🐛'.repeat(Math.floor(count));
-            if (count < 100) return '🐛🐛🐛 ' + count.toLocaleString();
-            if (count < 1000) return '🐛🐛🐛🐛🐛 ' + count.toLocaleString();
-            if (count < 10000) return '💚💚 ' + count.toLocaleString();
-            if (count < 100000) return '💚💚💚 ' + count.toLocaleString();
-            if (count < 1000000) return '🌿🌿🌿 ' + count.toLocaleString();
-            if (count < 10000000) return '🌳🌳🌳 ' + count.toLocaleString();
-            return '🚜🚜🚜 ' + count.toLocaleString();
-        }
-
-        function calculatePopulation(day, offspring, genTime) {
-            // Smooth exponential growth instead of discrete jumps
-            // population = initial * (offspring)^(day/genTime)
-            return Math.pow(offspring, day / genTime);
+        function formatActualValue(num) {
+            if (num >= 1e15) {
+                return num.toExponential(3);
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(3) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            } else {
+                return num.toFixed(2);
+            }
         }
 
         function calculate() {
-            const offspring = parseInt(document.getElementById('offspring').value);
-            const genTime = parseInt(document.getElementById('genTime').value);
+            const k = parseInt(document.getElementById('kValue').value);
+            const n = parseInt(document.getElementById('seqLength').value);
             const viewType = document.getElementById('viewType').value;
 
-            const today = new Date();
-            const populations = [];
-            let totalPopulation = 1;
-            let maxPopulation = 0;
-            let maxDay = 0;
+            // Get initial values
+            const initialValues = [];
+            for (let i = 0; i < k; i++) {
+                const val = parseFloat(document.getElementById(`init${i}`).value);
+                initialValues.push(val);
+            }
 
-            for (let day = 0; day <= 30; day++) {
-                const population = calculatePopulation(day, offspring, genTime);
-                const generation = Math.floor(day / genTime) + 1; // 1-indexed
-                const currentDate = new Date(today.getTime() + day * 24 * 60 * 60 * 1000);
-                populations.push({
-                    day: day,
+            // Calculate sequence
+            const sequence = calculateKBonacci(k, initialValues, n);
+
+            // Estimate dominant eigenvalue
+            const eigenvalue = estimateDominantEigenvalue(sequence, k);
+
+            const today = new Date();
+            const values = [];
+
+            for (let i = 0; i <= n; i++) {
+                const currentDate = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                values.push({
+                    day: i,
                     date: currentDate,
-                    population: population,
-                    generation: generation,
+                    value: sequence[i],
                     dayOfWeek: currentDate.toLocaleDateString('en-US', { weekday: 'short' }),
                     dateString: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                 });
-                
-                if (population > maxPopulation) {
-                    maxPopulation = population;
-                    maxDay = day;
-                }
             }
 
+            // Calculate growth rate
+            const growthRate = values.length > 1 ? values[n].value / values[0].value : 1;
+
             // Update summary stats
-            const finalPop = Math.round(populations[populations.length - 1].population);
-            const finalGen = populations[populations.length - 1].generation;
             document.getElementById('summaryStats').innerHTML = `
                 <div class="stat-box">
-                    <div class="stat-value">${formatNumber(finalPop)}</div>
-                    <div class="stat-label">Total aphids after 30 days</div>
+                    <div class="stat-value">${k}</div>
+                    <div class="stat-label">k-value (${k === 1 ? 'constant' : k === 2 ? 'Fibonacci' : k === 3 ? 'Tribonacci' : k === 4 ? 'Tetranacci' : k + '-bonacci'})</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">${finalGen}</div>
-                    <div class="stat-label">Total generations</div>
+                    <div class="stat-value">${formatNumber(values[n].value)}</div>
+                    <div class="stat-label">Final value a(${n})</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">${offspring}</div>
-                    <div class="stat-label">Offspring per aphid</div>
+                    <div class="stat-value">${eigenvalue ? eigenvalue.toFixed(4) : 'N/A'}</div>
+                    <div class="stat-label">Est. dominant eigenvalue (λ)</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">${genTime}</div>
-                    <div class="stat-label">Days per generation</div>
+                    <div class="stat-value">${growthRate.toExponential(2)}</div>
+                    <div class="stat-label">Total growth factor</div>
                 </div>
             `;
 
             // Show/hide views based on selection
-            document.getElementById('calendarView').style.display = 
+            document.getElementById('calendarView').style.display =
                 (viewType === 'calendar' || viewType === 'both') ? 'block' : 'none';
-            document.getElementById('scrollView').style.display = 
+            document.getElementById('scrollView').style.display =
                 (viewType === 'scroll' || viewType === 'both') ? 'block' : 'none';
 
             // Render calendar view
             if (viewType === 'calendar' || viewType === 'both') {
-                // Update calendar title
-                const lastDate = populations[populations.length - 1].date;
+                const lastDate = values[values.length - 1].date;
                 const monthYear = today.getMonth() === lastDate.getMonth() && today.getFullYear() === lastDate.getFullYear()
                     ? today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                     : `${today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
                 document.getElementById('calendarTitle').textContent = `📅 ${monthYear}`;
-                
+
                 const calendarGrid = document.getElementById('calendarGrid');
                 calendarGrid.innerHTML = '';
-                
+
                 // Add day-of-week header
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const headerRow = document.createElement('div');
@@ -385,7 +470,7 @@
                 headerRow.style.display = 'grid';
                 headerRow.style.gridTemplateColumns = 'repeat(7, 1fr)';
                 headerRow.style.gap = '10px';
-                
+
                 dayNames.forEach(dayName => {
                     const headerCell = document.createElement('div');
                     headerCell.className = 'calendar-header-day';
@@ -393,24 +478,23 @@
                     headerRow.appendChild(headerCell);
                 });
                 calendarGrid.appendChild(headerRow);
-                
-                // Get the day of week for the first date (0 = Sunday, 6 = Saturday)
+
+                // Get the day of week for the first date
                 const firstDayOfWeek = today.getDay();
-                
+
                 // Add empty cells to align the first date correctly
                 for (let i = 0; i < firstDayOfWeek; i++) {
                     const emptyDiv = document.createElement('div');
                     emptyDiv.className = 'calendar-day inactive';
                     calendarGrid.appendChild(emptyDiv);
                 }
-                
+
                 // Add the actual days
-                populations.forEach(data => {
+                values.forEach(data => {
                     const dayDiv = document.createElement('div');
                     dayDiv.className = 'calendar-day active';
 
-                    const isGenerationStart = (data.day % genTime === 0 && data.day > 0) || data.day === 0;
-                    const roundedPopulation = Math.round(data.population);
+                    const roundedValue = Math.round(data.value);
                     const monthLabel = data.date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
                     const showMonth = data.date.getDate() === 1 || data.day === 0;
 
@@ -418,8 +502,7 @@
                         ${showMonth ? `<div style="position: absolute; top: 3px; left: 3px; font-size: 0.6em; opacity: 0.6;">${monthLabel}</div>` : ''}
                         <div class="day-of-week">${data.dayOfWeek}</div>
                         <div class="day-number">${data.date.getDate()}</div>
-                        <div class="aphid-count">${formatNumber(roundedPopulation)}</div>
-                        ${isGenerationStart ? '<div class="generation-marker">Gen ' + data.generation + '</div>' : ''}
+                        <div class="value-count">${formatNumber(roundedValue)}</div>
                     `;
                     calendarGrid.appendChild(dayDiv);
                 });
@@ -429,42 +512,38 @@
             if (viewType === 'scroll' || viewType === 'both') {
                 const scrollContent = document.getElementById('scrollContent');
                 scrollContent.innerHTML = '';
-                
-                populations.forEach(data => {
+
+                values.forEach(data => {
                     const dayBlock = document.createElement('div');
                     dayBlock.className = 'day-block';
-                    
-                    const isNewGeneration = (data.day % genTime === 0 && data.day > 0) || data.day === 0;
-                    const roundedPopulation = Math.round(data.population);
-                    const emoji = getEmoji(roundedPopulation);
-                    
+
+                    const roundedValue = Math.round(data.value);
+                    const isInitial = data.day < k;
+
                     dayBlock.innerHTML = `
                         <div class="day-header">
-                            ${data.dayOfWeek}, ${data.dateString}
-                            ${isNewGeneration ? '<span class="generation-marker-scroll">Generation ' + data.generation + '</span>' : ''}
+                            Day ${data.day}: ${data.dayOfWeek}, ${data.dateString}
+                            ${isInitial ? '<span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; font-size: 0.7em; margin-left: 10px;">Initial value</span>' : ''}
                         </div>
-                        <div class="emoji-display">${emoji}</div>
-                        <div style="text-align: center; font-size: 1.2em; margin-top: 10px;">
-                            <strong>${formatNumber(roundedPopulation)}</strong> aphids
+                        <div class="value-display">
+                            ${roundedValue.toLocaleString()}
                         </div>
-                        ${data.day === 0 ? `
+                        ${data.day >= k ? `
                             <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9em;">
-                                🐛 Starting with a single aphid - Generation 1 begins!
-                            </div>
-                        ` : isNewGeneration ? `
-                            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9em;">
-                                🎉 Generation ${data.generation} begins! Exponential growth continues with ~${offspring} offspring per aphid every ${genTime} days.
+                                a(${data.day}) = ${Array.from({length: k}, (_, i) => `a(${data.day - k + i})`).join(' + ')}
+                                = ${Array.from({length: k}, (_, i) => formatNumber(sequence[data.day - k + i])).join(' + ')}
                             </div>
                         ` : ''}
                     `;
-                    
+
                     scrollContent.appendChild(dayBlock);
                 });
             }
         }
 
-        // Initial calculation with default values
+        // Initial setup
         window.onload = function() {
+            updateInitialValueInputs();
             document.getElementById('viewType').value = 'both';
             calculate();
         };
