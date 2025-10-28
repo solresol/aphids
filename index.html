@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aphid Population Explosion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .controls label {
+            margin: 0 10px;
+            font-size: 1.1em;
+        }
+
+        .controls input[type="number"],
+        .controls select {
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: none;
+            margin: 0 5px;
+        }
+
+        .controls button {
+            padding: 10px 25px;
+            font-size: 1.1em;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #ff5252;
+        }
+
+        .calendar-view {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-header-day {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 10px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .calendar-day.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .calendar-day.inactive {
+            background: rgba(255, 255, 255, 0.05);
+            opacity: 0.5;
+        }
+
+        .calendar-day.active:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
+        }
+
+        .day-number {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .day-of-week {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .aphid-count {
+            font-size: 0.9em;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .scroll-view {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .day-block {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+
+        .day-block:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(10px);
+        }
+
+        .day-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .emoji-display {
+            font-size: 3em;
+            text-align: center;
+            margin: 20px 0;
+            line-height: 1.2;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .generation-marker {
+            display: inline-block;
+            background: #ff6b6b;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.7em;
+            margin-top: 5px;
+        }
+
+        .generation-marker-scroll {
+            display: inline-block;
+            background: #ff6b6b;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .warning-box {
+            background: rgba(255, 107, 107, 0.3);
+            border-left: 4px solid #ff6b6b;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐛 The Aphid Population Explosion 🐛</h1>
+        <p class="subtitle">Watch a single aphid become millions in just one month</p>
+
+        <div class="controls">
+            <label>
+                Offspring per aphid:
+                <input type="number" id="offspring" value="50" min="10" max="100" step="5">
+            </label>
+            <label>
+                Generation time (days):
+                <input type="number" id="genTime" value="7" min="4" max="10" step="1">
+            </label>
+            <label>
+                View type:
+                <select id="viewType">
+                    <option value="calendar">Calendar View</option>
+                    <option value="scroll">Scroll View</option>
+                    <option value="both">Both Views</option>
+                </select>
+            </label>
+            <button onclick="calculate()">Calculate Population</button>
+        </div>
+
+        <div class="stats" id="summaryStats"></div>
+
+        <div class="calendar-view" id="calendarView" style="display:none;">
+            <h2 id="calendarTitle">📅 30-Day Calendar</h2>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <div class="scroll-view" id="scrollView" style="display:none;">
+            <h2>📜 Day-by-Day Growth</h2>
+            <div id="scrollContent"></div>
+        </div>
+
+        <div class="warning-box">
+            <h3>⚠️ Fun Fact</h3>
+            <p>This is why aphids are such successful pests! In reality, predators, weather, and resource limitations prevent populations from reaching these theoretical maximums. But under ideal greenhouse conditions, these numbers are achievable.</p>
+        </div>
+    </div>
+
+    <script>
+        function formatNumber(num) {
+            return Math.floor(num).toLocaleString();
+        }
+
+        function getEmoji(count) {
+            if (count === 1) return '🐛';
+            if (count < 10) return '🐛'.repeat(Math.floor(count));
+            if (count < 100) return '🐛🐛🐛 ' + count.toLocaleString();
+            if (count < 1000) return '🐛🐛🐛🐛🐛 ' + count.toLocaleString();
+            if (count < 10000) return '💚💚 ' + count.toLocaleString();
+            if (count < 100000) return '💚💚💚 ' + count.toLocaleString();
+            if (count < 1000000) return '🌿🌿🌿 ' + count.toLocaleString();
+            if (count < 10000000) return '🌳🌳🌳 ' + count.toLocaleString();
+            return '🚜🚜🚜 ' + count.toLocaleString();
+        }
+
+        function calculatePopulation(day, offspring, genTime) {
+            // Smooth exponential growth instead of discrete jumps
+            // population = initial * (offspring)^(day/genTime)
+            return Math.pow(offspring, day / genTime);
+        }
+
+        function calculate() {
+            const offspring = parseInt(document.getElementById('offspring').value);
+            const genTime = parseInt(document.getElementById('genTime').value);
+            const viewType = document.getElementById('viewType').value;
+
+            const today = new Date();
+            const populations = [];
+            let totalPopulation = 1;
+            let maxPopulation = 0;
+            let maxDay = 0;
+
+            for (let day = 0; day <= 30; day++) {
+                const population = calculatePopulation(day, offspring, genTime);
+                const generation = Math.floor(day / genTime) + 1; // 1-indexed
+                const currentDate = new Date(today.getTime() + day * 24 * 60 * 60 * 1000);
+                populations.push({
+                    day: day,
+                    date: currentDate,
+                    population: population,
+                    generation: generation,
+                    dayOfWeek: currentDate.toLocaleDateString('en-US', { weekday: 'short' }),
+                    dateString: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                });
+                
+                if (population > maxPopulation) {
+                    maxPopulation = population;
+                    maxDay = day;
+                }
+            }
+
+            // Update summary stats
+            const finalPop = Math.round(populations[populations.length - 1].population);
+            const finalGen = populations[populations.length - 1].generation;
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-value">${formatNumber(finalPop)}</div>
+                    <div class="stat-label">Total aphids after 30 days</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${finalGen}</div>
+                    <div class="stat-label">Total generations</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${offspring}</div>
+                    <div class="stat-label">Offspring per aphid</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${genTime}</div>
+                    <div class="stat-label">Days per generation</div>
+                </div>
+            `;
+
+            // Show/hide views based on selection
+            document.getElementById('calendarView').style.display = 
+                (viewType === 'calendar' || viewType === 'both') ? 'block' : 'none';
+            document.getElementById('scrollView').style.display = 
+                (viewType === 'scroll' || viewType === 'both') ? 'block' : 'none';
+
+            // Render calendar view
+            if (viewType === 'calendar' || viewType === 'both') {
+                // Update calendar title
+                const lastDate = populations[populations.length - 1].date;
+                const monthYear = today.getMonth() === lastDate.getMonth() && today.getFullYear() === lastDate.getFullYear()
+                    ? today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                    : `${today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+                document.getElementById('calendarTitle').textContent = `📅 ${monthYear}`;
+                
+                const calendarGrid = document.getElementById('calendarGrid');
+                calendarGrid.innerHTML = '';
+                
+                // Add day-of-week header
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const headerRow = document.createElement('div');
+                headerRow.className = 'calendar-header';
+                headerRow.style.gridColumn = '1 / -1';
+                headerRow.style.display = 'grid';
+                headerRow.style.gridTemplateColumns = 'repeat(7, 1fr)';
+                headerRow.style.gap = '10px';
+                
+                dayNames.forEach(dayName => {
+                    const headerCell = document.createElement('div');
+                    headerCell.className = 'calendar-header-day';
+                    headerCell.textContent = dayName;
+                    headerRow.appendChild(headerCell);
+                });
+                calendarGrid.appendChild(headerRow);
+                
+                // Get the day of week for the first date (0 = Sunday, 6 = Saturday)
+                const firstDayOfWeek = today.getDay();
+                
+                // Add empty cells to align the first date correctly
+                for (let i = 0; i < firstDayOfWeek; i++) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'calendar-day inactive';
+                    calendarGrid.appendChild(emptyDiv);
+                }
+                
+                // Add the actual days
+                populations.forEach(data => {
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = 'calendar-day active';
+                    
+                    const isGenerationStart = (data.day % genTime === 0 && data.day > 0) || data.day === 0;
+                    const roundedPopulation = Math.round(data.population);
+                    
+                    dayDiv.innerHTML = `
+                        <div class="day-of-week">${data.dayOfWeek}</div>
+                        <div class="day-number">${data.date.getDate()}</div>
+                        <div class="aphid-count">${formatNumber(roundedPopulation)}</div>
+                        ${isGenerationStart ? '<div class="generation-marker">Gen ' + data.generation + '</div>' : ''}
+                    `;
+                    calendarGrid.appendChild(dayDiv);
+                });
+            }
+
+            // Render scroll view
+            if (viewType === 'scroll' || viewType === 'both') {
+                const scrollContent = document.getElementById('scrollContent');
+                scrollContent.innerHTML = '';
+                
+                populations.forEach(data => {
+                    const dayBlock = document.createElement('div');
+                    dayBlock.className = 'day-block';
+                    
+                    const isNewGeneration = (data.day % genTime === 0 && data.day > 0) || data.day === 0;
+                    const roundedPopulation = Math.round(data.population);
+                    const emoji = getEmoji(roundedPopulation);
+                    
+                    dayBlock.innerHTML = `
+                        <div class="day-header">
+                            ${data.dayOfWeek}, ${data.dateString}
+                            ${isNewGeneration ? '<span class="generation-marker-scroll">Generation ' + data.generation + '</span>' : ''}
+                        </div>
+                        <div class="emoji-display">${emoji}</div>
+                        <div style="text-align: center; font-size: 1.2em; margin-top: 10px;">
+                            <strong>${formatNumber(roundedPopulation)}</strong> aphids
+                        </div>
+                        ${data.day === 0 ? `
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9em;">
+                                🐛 Starting with a single aphid - Generation 1 begins!
+                            </div>
+                        ` : isNewGeneration ? `
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9em;">
+                                🎉 Generation ${data.generation} begins! Exponential growth continues with ~${offspring} offspring per aphid every ${genTime} days.
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    scrollContent.appendChild(dayBlock);
+                });
+            }
+        }
+
+        // Initial calculation with default values
+        window.onload = function() {
+            document.getElementById('viewType').value = 'both';
+            calculate();
+        };
+    </script>
+</body>
+</html>
